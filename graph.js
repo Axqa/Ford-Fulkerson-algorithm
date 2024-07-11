@@ -1,5 +1,4 @@
 // TODO: ctrl+Z
-// TODO: cursor styles
 
 const circleTolerance = 5;
 const lineTolerance = 20;
@@ -387,6 +386,8 @@ inputElement.style.visibility = 'hidden';
 let wasDragging = false;
 let mousePressed = false;
 let offsetX, offsetY;
+let dragSomething = false;
+
 
 // Для создания вершины
 let mouseDownOnBorder = false;
@@ -631,6 +632,9 @@ function mouseReset() {
     mouseDownOnEdge = false;
     mouseDownOnEdgeText = false;
     mouseDownOnVertexLabel = false;
+
+    dragSomething = false;
+    canvas.style.cursor = 'default';
 }
 
 function dragEdgeTextStart(edge) {
@@ -781,6 +785,7 @@ canvas.addEventListener('mousemove', (e) => {
             }
         }
  
+        dragSomething = true;
         wasDragging = true;     
         
     }
@@ -791,15 +796,17 @@ canvas.addEventListener('mousemove', (e) => {
     }
     
     if (vertexToDragLabel) {
-
+        dragSomething = true;
         moveVertexLabel(vertexToDragLabel, mouseX, mouseY);
     }
-
+    
     if (edgeToDragText) {
+        dragSomething = true;
         dragEdgeText(edgeToDragText, mouseX, mouseY);
     }
-
+    
     if (edgeDragging) {
+        dragSomething = true;
         dragEdge(draggedEdge, mouseX, mouseY);
     }
 
@@ -1171,3 +1178,46 @@ function findSolution() {
 // document.getElementById('task').appendChild(newParagraph);
 
 onUpdate();
+
+
+function updateCursorStyle(event) {
+    const rect = canvas.getBoundingClientRect()
+    const mouseX = event.clientX - rect.left
+    const mouseY = event.clientY - rect.top
+
+    let cursorStyle = 'default'
+
+    for (let vertex of Vertex.vertices) {
+        // const dx = mouseX - vertex.x
+        // const dy = mouseY - vertex.y
+        // const distance = Math.sqrt(dx * dx + dy * dy)
+
+        if (vertex.pointIn(mouseX, mouseY)) {
+            if (vertex.pointOnBorder(mouseX, mouseY)) {
+                cursorStyle = 'crosshair'
+            } else {
+                cursorStyle = 'move'
+            }
+            break
+        }
+    }
+
+    for (let edge of Edge.edges) {
+        if (edge.pointOnEdge(mouseX, mouseY)) {
+            if (edge.pointOnHead(mouseX, mouseY)) {
+                cursorStyle = 'grab'
+            } else {
+                cursorStyle = 'pointer'
+            }
+            break
+        }
+    }
+    
+    if (dragSomething) {
+        cursorStyle = 'grabbing'
+    }
+
+    canvas.style.cursor = cursorStyle
+}
+
+canvas.addEventListener('mousemove', updateCursorStyle)
